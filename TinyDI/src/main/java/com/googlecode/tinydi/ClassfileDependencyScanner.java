@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import java.util.*;
 
@@ -110,7 +111,7 @@ public class ClassfileDependencyScanner {
    */
   @SuppressWarnings("unchecked")
   private Iterable<Class> getClasses(String packageName)
-      throws ClassNotFoundException, IOException {
+          throws ClassNotFoundException, IOException, URISyntaxException {
 
     List<String> classNames = classpathScanner.getClassNamesFromPackage(packageName);
 

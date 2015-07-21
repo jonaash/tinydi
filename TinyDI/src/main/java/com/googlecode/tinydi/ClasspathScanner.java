@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -16,14 +18,17 @@ import java.util.jar.JarFile;
  * Scans the classpath (both the filesystem and the jars) for classes inside a certain java package.
  *
  * @author Richard Pal
- * @date 10/23/11
+ *
+ * Changed classloader that is used.
+ * Characters %20 in paths are replaced with spaces.
+ * @author Jonas Klimes
  */
 public class ClasspathScanner {
 
   protected Logger logger = LoggerFactory.getLogger(getClass());
 
-  public List<String> getClassNamesFromPackage(String packagePrefix) throws IOException {
-    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+  public List<String> getClassNamesFromPackage(String packagePrefix) throws IOException, URISyntaxException {
+    ClassLoader classLoader = getClass().getClassLoader();
     ArrayList<String> classNameList = new ArrayList<String>();
 
     // replace "." with "/"
@@ -37,21 +42,24 @@ public class ClasspathScanner {
       URL url = resources.nextElement();
       logger.debug("url:{}", url);
 
+      // decode URL to replace character %20 with spaces
+      String path = URLDecoder.decode(url.getPath(), "UTF-8");
+      logger.debug("path:{}", path);
+
       if(url.getProtocol().equals("jar")) {
         // extract from JAR
-        getClassNamesFromJar(url, classNameList, packageDir);
+        getClassNamesFromJar(path, classNameList, packageDir);
       } else {
         // extract from filesystem:
-        File folder = new File(url.getFile());
+        File folder = new File(path);
         getClassNamesFromFileSystem(classLoader, folder, classNameList, packagePrefix);
       }
     }
     return classNameList;
   }
 
-  private void getClassNamesFromJar(URL packageUrl, List<String> classList, String packagePrefix) throws IOException {
-    // extract jar file name
-    String jarFileName = packageUrl.getFile();
+  private void getClassNamesFromJar(String jarFileName, List<String> classList, String packagePrefix) throws
+          IOException {
     jarFileName = jarFileName.substring(5,jarFileName.indexOf("!"));
     logger.debug("JAR file name: {}", jarFileName);
 
